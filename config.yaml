@@ -1,0 +1,28 @@
+portfolios:
+  growth:
+    name: "Technology Growth Portfolio"
+    tickers: [AAPL, MSFT, NVDA, GOOGL, AMZN]
+    weights: [0.25, 0.25, 0.20, 0.15, 0.15]
+    benchmark: QQQ
+
+  balanced:
+    name: "Gloabl Portfolio"
+    tickers: [VTI, BND, VXUS]
+    weights: [0.5, 0.3, 0.2]
+    benchmark: "^GSPC"
+
+  income:
+    name: "Income Portfolio"
+    tickers: [JNJ, KO, PG, VYM]
+    weights: [0.25, 0.25, 0.25, 0.25]
+    benchmark: VYM
+
+  custom:
+    name: "Custom Portfolio"
+    tickers: []
+    weights: []
+    benchmark: null
+
+date_range:
+  start: "2019-01-01"
+  end: null
