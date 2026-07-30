@@ -11,16 +11,12 @@ def validate_weights(weights):
     '''
     if not weights:
         raise ValueError("Weights dictionary is empty.")
-
     for ticker, weight in weights.items():
         if not isinstance(weight, (int, float)):
             raise ValueError(f"Weight for {ticker} is not numeric: {weight}")
-
         if weight < 0:
             raise ValueError(f"Negative weight for {ticker}: {weight}. Short positions are not supported.")
-
     total = sum(weights.values())
-
     if total == 0:
         raise ValueError("Weights sum to zero. Portfolio cannot be normalised.")
 
@@ -33,9 +29,7 @@ def normalise_weights(weights):
     dict: Dictionary containing normalised portfolio weights
     '''
     validate_weights(weights)
-
     total = sum(weights.values())
-
     return {ticker: weight / total for ticker, weight in weights.items()}
 
 def calculate_portfolio_returns(price_data, weights):
@@ -48,18 +42,13 @@ def calculate_portfolio_returns(price_data, weights):
     pandas.Series: Daily portfolio returns indexed by date
     '''
     missing = set(weights.keys()) - set(price_data.columns)
-
     if missing:
         raise ValueError(f"Tickers missing from price data: {missing}")
-
     weights = normalise_weights(weights)
-
     asset_returns = price_data[list(weights.keys())].pct_change().dropna()
     weight_vector = pd.Series(weights)
-
     portfolio_returns = asset_returns.mul(weight_vector, axis=1).sum(axis=1)
     portfolio_returns.name = "portfolio_return"
-
     return portfolio_returns
 
 def calculate_cumulative_returns(portfolio_returns):
@@ -72,7 +61,6 @@ def calculate_cumulative_returns(portfolio_returns):
     '''
     cumulative_returns = (1 + portfolio_returns).cumprod() - 1
     cumulative_returns.name = "cumulative_return"
-
     return cumulative_returns
 
 def calculate_portfolio_value(cumulative_returns, initial_value=100_000):
@@ -86,5 +74,16 @@ def calculate_portfolio_value(cumulative_returns, initial_value=100_000):
     '''
     portfolio_value = initial_value * (1 + cumulative_returns)
     portfolio_value.name = "portfolio_value"
-
     return portfolio_value
+
+def calculate_correlation_matrix(price_data):
+    '''
+    Calculates the correlation matrix between assets in the portfolio.
+    Parameters:
+    price_data (pandas.DataFrame): Daily asset prices indexed by date
+    Returns:
+    pandas.DataFrame: Correlation matrix of asset daily returns
+    '''
+    asset_returns = price_data.pct_change().dropna()
+    correlation_matrix = asset_returns.corr()
+    return correlation_matrix
