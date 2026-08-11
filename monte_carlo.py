@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def simulate_returns(portfolio_returns, num_simulations=1000, num_days=252, random_seed=None):
     '''
     Simulates future daily portfolio returns using a normal distribution.
@@ -19,28 +20,6 @@ def simulate_returns(portfolio_returns, num_simulations=1000, num_days=252, rand
     simulated_returns = np.random.normal(loc=daily_mean, scale=daily_standard_deviation, size=(num_simulations, num_days))
     return simulated_returns
 
-def calculate_simulated_values(simulated_returns: np.ndarray,
-                                initial_value: float = 100_000) -> np.ndarray:
-    """Compound simulated returns into simulated portfolio value paths.
-
-    Parameters
-    ----------
-    simulated_returns : [np.ndarray]
-        Array of shape (num_simulations, num_days) from simulate_returns().
-    initial_value : [float]
-        Starting portfolio value, defaults to 100,000.
-
-    Returns
-    -------
-    np.ndarray
-        Array of shape (num_simulations, num_days) containing simulated
-        portfolio values through time.
-    """
-    growth_factors = 1 + simulated_returns
-    cumulative_growth = np.cumprod(growth_factors, axis=1)
-    simulated_values = initial_value * cumulative_growth
-
-    return simulated_values
 
 def calculate_simulated_values(simulated_returns, initial_value=100_000):
     '''
@@ -55,6 +34,27 @@ def calculate_simulated_values(simulated_returns, initial_value=100_000):
     cumulative_growth = np.cumprod(growth_factors, axis=1)
     simulated_values = initial_value * cumulative_growth
     return simulated_values
+
+
+def calculate_simulation_summary(simulated_values):
+    '''
+    Summarises Monte Carlo simulation outcomes using final-day portfolio values.
+    Parameters:
+    simulated_values (numpy.ndarray): Simulated portfolio values for each simulation path
+    Returns:
+    dict: Summary statistics — mean, median, best_case, worst_case, percentile_5, percentile_95
+    '''
+    final_values = simulated_values[:, -1]
+    simulation_summary = {
+        "mean": final_values.mean(),
+        "median": np.percentile(final_values, 50),
+        "best_case": final_values.max(),
+        "worst_case": final_values.min(),
+        "percentile_5": np.percentile(final_values, 5),
+        "percentile_95": np.percentile(final_values, 95),
+    }
+    return simulation_summary
+
 
 def calculate_simulation_percentiles(simulated_values):
     '''
@@ -73,6 +73,7 @@ def calculate_simulation_percentiles(simulated_values):
         "percentile_95": percentile_95
     })
     return percentile_paths
+
 
 def run_monte_carlo_simulation(portfolio_returns, num_simulations=1000, num_days=252, initial_value=100_000, random_seed=None):
     '''
