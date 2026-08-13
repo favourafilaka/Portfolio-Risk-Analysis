@@ -15,7 +15,7 @@ portfolios:
     name: "Income Portfolio"
     tickers: [JNJ, KO, PG, VYM]
     weights: [0.25, 0.25, 0.25, 0.25]
-    benchmark: VYM
+    benchmark: SCHD
 
   custom:
     name: "Custom Portfolio"
