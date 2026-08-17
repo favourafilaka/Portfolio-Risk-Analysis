@@ -1,0 +1,172 @@
+\documentclass[10pt,a4paper]{article}
+
+% --------------------------------------------------
+% Packages
+% --------------------------------------------------
+\usepackage[a4paper,margin=0.7in]{geometry}
+\usepackage{mathptmx}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage[hidelinks]{hyperref}
+
+% --------------------------------------------------
+% Document formatting
+% --------------------------------------------------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\titleformat{\section}
+    {\large\bfseries}
+    {}
+    {0pt}
+    {}
+    [\vspace{-4pt}\rule{\textwidth}{0.5pt}]
+
+\titleformat{\subsection}
+    {\normalsize\bfseries}
+    {}
+    {0pt}
+    {}
+
+\titlespacing*{\section}{0pt}{7pt}{3pt}
+\titlespacing*{\subsection}{0pt}{5pt}{2pt}
+
+% Compact tables
+\renewcommand{\arraystretch}{1.05}
+
+% --------------------------------------------------
+% Document
+% --------------------------------------------------
+\begin{document}
+
+% --------------------------------------------------
+% Title
+% --------------------------------------------------
+\begin{center}
+
+{\Large \textbf{Portfolio Risk \& Strategy Analysis Platform}}
+
+\vspace{2pt}
+
+{\small
+Python \textbar{} Streamlit \textbar{} Portfolio Analytics
+\textbar{} Quantitative Risk
+}
+
+\end{center}
+
+\vspace{-5pt}
+
+% ==================================================
+\section{Introduction}
+% ==================================================
+
+This project develops an interactive portfolio risk and strategy analysis platform using Python, Streamlit, pandas, NumPy and financial market data. The objective is to assess portfolio performance alongside the risk taken to achieve it, using historical, benchmark-relative and forward-looking analysis. The analysis covers January 2019 to August 2026, including the COVID-19 market crash, subsequent recovery and the technology-led rally.
+
+The portfolio consists of AAPL (25\%), MSFT (25\%), NVDA (20\%), AMZN (15\%) and GOOGL (15\%). This concentrated allocation provides substantial exposure to large-cap technology and growth factors, creating both significant return potential and concentration risk.
+
+% ==================================================
+\section{Methodology}
+% ==================================================
+
+Daily price data is converted into returns and aggregated using portfolio weights. The platform evaluates cumulative return, CAGR, annualised volatility, Sharpe and Sortino ratios, maximum drawdown, VaR, CVaR and benchmark-relative performance. Monte Carlo simulation generates 1,000 one-year scenarios, while scenario analysis evaluates predefined market and interest-rate shocks. A 4\% risk-free rate and 95\% confidence level are used for risk-adjusted calculations.
+
+% ==================================================
+\section{Results \& Analysis}
+% ==================================================
+
+\subsection{Portfolio Risk \& Performance}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Result} \\
+\midrule
+Initial Investment & £100,000 \\
+Final Portfolio Value & £1,125,000 \\
+Cumulative Return & 1,024.9\% \\
+CAGR & $\sim$37.5\% \\
+Annualised Volatility & 28.9\% \\
+Sharpe Ratio & 1.11 \\
+Sortino Ratio & 1.52 \\
+Maximum Drawdown & -40.2\% \\
+Win Rate & 56.6\% \\
+Calmar Ratio & 0.93 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The portfolio generated exceptional long-term returns, but the 28.9\% volatility and -40.2\% maximum drawdown demonstrate the substantial risk required to achieve them. The Sharpe and Sortino ratios indicate that the historical return was strong relative to both total and downside volatility, although the drawdown highlights the potential difficulty of maintaining the strategy through severe market declines.
+
+\subsection{Benchmark Comparison}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Portfolio vs QQQ} \\
+\midrule
+Beta & 1.14 \\
+Alpha & 9.4\% \\
+Tracking Error & 10.0\% \\
+Information Ratio & 1.22 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The portfolio generated strong benchmark-relative performance while accepting greater market exposure. A beta of 1.14 indicates greater sensitivity to market movements than QQQ, while positive alpha suggests that historical performance exceeded what would be explained by benchmark exposure alone. The 1.22 information ratio also indicates relatively strong active performance relative to the tracking risk taken.
+
+Concentration was an important driver of both performance and risk. The five-stock structure created substantial exposure to common technology and growth factors, while NVDA's exceptional historical performance materially benefited the portfolio. The same concentration increased sensitivity to sector-wide declines, helping explain the combination of high returns, elevated volatility and the -40.2\% maximum drawdown.
+
+\subsection{Monte Carlo Simulation}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Simulated One-Year Outcome} \\
+\midrule
+Simulations & 1,000 \\
+Expected Portfolio Value & £144,431 \\
+5th Percentile & £85,006 \\
+95th Percentile & £228,077 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Monte Carlo distribution demonstrates that strong historical performance does not eliminate future downside risk. The 5th percentile indicates a scenario in which the portfolio falls below its initial £100,000 investment, while the wide range of outcomes highlights the uncertainty surrounding future returns. The simulation is therefore treated as a distribution of potential outcomes rather than a point forecast.
+
+\subsection{Stress Testing}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Scenario} & \textbf{Portfolio Value} \\
+\midrule
+-30\% Market Shock & £787,452 \\
+-10\% Market Correction & £1,012,439 \\
+-15\% Interest-Rate Shock & £956,192 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The stress scenarios illustrate the portfolio's sensitivity to adverse market conditions. The -30\% market scenario produces the largest impact, reflecting the portfolio's concentrated equity exposure, while the rate shock demonstrates the potential vulnerability of technology and growth-oriented holdings to changes in the interest-rate environment. These scenarios complement the probabilistic Monte Carlo analysis by examining specific adverse events.
+
+% ==================================================
+\section{Conclusion}
+% ==================================================
+
+The portfolio delivered exceptional historical performance, but the analysis shows that this was accompanied by meaningful volatility, drawdown and concentration risk. Benchmark-relative metrics indicate strong historical active performance, while Monte Carlo simulation and stress testing demonstrate the uncertainty and downside exposure that remain beneath the headline return.
+
+The project demonstrates the importance of evaluating \textbf{risk-adjusted and benchmark-relative performance rather than return alone}, combining portfolio construction, quantitative risk measurement, simulation and scenario analysis within an interactive Python-based platform.
+
+\end{document}
