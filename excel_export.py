@@ -1,5 +1,6 @@
 from openpyxl import Workbook
 from openpyxl.formatting.rule import CellIsRule
+from openpyxl.chart import BarChart, Reference
 
 def write_overview_sheet(workbook, portfolio_data):
     '''
@@ -158,13 +159,17 @@ def write_stress_test_sheet(workbook, stress_results):
         CellIsRule(operator="lessThan", formula=["-0.10"])
     )
 
-def write_dashboard_sheet(workbook):
+def write_dashboard_sheet(workbook, num_holdings):
     '''
     Writes the Portfolio Dashboard sheet.
+
     Parameters:
     workbook (openpyxl.Workbook): Workbook to modify
+    num_holdings (int): Number of holdings in Portfolio Overview,
+        used to size the weights chart reference.
+
     Returns:
-    None: Modifies workbook in place
+    None: Modifies workbook in place.
     '''
     sheet = workbook.create_sheet("Dashboard")
 
@@ -186,6 +191,36 @@ def write_dashboard_sheet(workbook):
     sheet["C7"] = "='Risk Metrics'!B7"
     sheet["E7"] = "='Benchmark Comparison'!B4"
 
+    chart = BarChart()
+    chart.title = "Portfolio Weights"
+    chart.style = 10
+    chart.x_axis.title = "Ticker"
+    chart.y_axis.title = "Weight"
+    chart.height = 8
+    chart.width = 14
+
+    overview_sheet = workbook["Portfolio Overview"]
+    last_row = 3 + num_holdings
+
+    data = Reference(
+        overview_sheet,
+        min_col=2,
+        min_row=3,
+        max_row=last_row
+    )
+
+    categories = Reference(
+        overview_sheet,
+        min_col=1,
+        min_row=4,
+        max_row=last_row
+    )
+
+    chart.add_data(data, titles_from_data=True)
+    chart.set_categories(categories)
+
+    sheet.add_chart(chart, "A10")
+
 def apply_standard_formatting(worksheet):
     '''
     Applies standard worksheet formatting.
@@ -206,17 +241,12 @@ def apply_standard_formatting(worksheet):
 def export_to_excel(all_data, output_path):
     '''
     Exports portfolio analysis results to Excel.
-    Parameters:
-    all_data (dict): Portfolio analysis results — keys portfolio, risk,
-        benchmark, backtesting, monte_carlo, stress_testing
-    output_path (str): Excel output file path
-    Returns:
-    None: Saves workbook to specified path
     '''
     workbook = Workbook()
-    write_dashboard_sheet(workbook)
+
     write_overview_sheet(workbook, all_data["portfolio"])
     write_risk_sheet(workbook, all_data["risk"])
+    write_dashboard_sheet(workbook)
     write_benchmark_sheet(workbook, all_data["benchmark"])
     write_backtesting_sheet(workbook, all_data["backtesting"])
     write_monte_carlo_sheet(workbook, all_data["monte_carlo"])
@@ -224,4 +254,9 @@ def export_to_excel(all_data, output_path):
 
     for sheet in workbook.worksheets:
         apply_standard_formatting(sheet)
+
+    workbook.calculation.fullCalcOnLoad = True
+    workbook.calculation.forceFullCalc = True
+    workbook.calculation.calcMode = "auto"
+
     workbook.save(output_path)
