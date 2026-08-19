@@ -117,6 +117,8 @@ num_days = st.sidebar.slider("Monte Carlo horizon (trading days)", 30, 504, 252,
 weights = normalise_weights(weights)
 
 portfolio_returns = calculate_portfolio_returns(prices, weights)
+st.write("DEBUG portfolio_returns shape:", portfolio_returns.shape)
+st.write("DEBUG portfolio_returns head:", portfolio_returns.head())
 cumulative_returns = calculate_cumulative_returns(portfolio_returns)
 portfolio_value = calculate_portfolio_value(cumulative_returns, initial_value)
 correlation_matrix = calculate_correlation_matrix(prices)
