@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-from data import load_config, get_portfolio_prices
+from data import load_config, get_portfolio_prices, get_benchmark_prices
 from portfolio import (
     normalise_weights,
     calculate_portfolio_returns,
@@ -40,24 +40,22 @@ from visualisations import (
 
 st.set_page_config(page_title="Portfolio Risk & Strategy Platform", layout="wide")
 
-# Cached data loading
+# Cached data loading functions
 
 @st.cache_data
 def cached_load_config():
     return load_config()
 
-
-@st.cache_data
-def cached_get_prices(portfolio_name, config):
+@st.cache_data(ttl=3600, show_spinner="Fetching market data...")
+def cached_get_portfolio_prices(portfolio_name, config):
     return get_portfolio_prices(portfolio_name, config)
 
-
-@st.cache_data
+@st.cache_data(ttl=3600, show_spinner="Fetching benchmark data...")
 def cached_benchmark_prices(ticker, start, end):
-    import yfinance as yf
-    return yf.download(ticker, start=start, end=end)["Close"]
+    return get_benchmark_prices(ticker, start, end)
 
-# Sidebar — inputs
+
+# Sidebar — inputs & configuration
 
 st.sidebar.title("Portfolio Settings")
 
@@ -70,9 +68,8 @@ portfolio_name = st.sidebar.selectbox(
 
 preset = config["portfolios"][portfolio_name]
 
-# "custom" preset ships with empty tickers/weights — let the user define
-# their own portfolio manually in that case.
-if not preset["tickers"]:
+# Custom ticker selection if preset is empty
+if not preset.get("tickers"):
     st.sidebar.subheader("Custom tickers")
     ticker_input = st.sidebar.text_input(
         "Tickers (comma-separated)", value="AAPL, MSFT, GOOGL"
@@ -82,13 +79,22 @@ if not preset["tickers"]:
 else:
     tickers = preset["tickers"]
 
-prices = cached_get_prices(portfolio_name, config)
-tickers = list(prices.columns)  # keep in sync with whatever yfinance actually returned
+# Data Retrieval with Rate Limit & Error Handling
+try:
+    prices = cached_get_portfolio_prices(portfolio_name, config)
+    if prices is None or prices.empty:
+        st.error("⚠️ Failed to load price data. Yahoo Finance may be rate-limiting requests or returned no data. Please wait a few moments and try again.")
+        st.stop()
+except Exception as e:
+    st.error(f"⚠️ Error fetching price data: {e}")
+    st.stop()
+
+tickers = list(prices.columns)  # Keep in sync with returned yfinance columns
 
 st.sidebar.subheader("Weights")
 preset_weights = preset.get("weights") or []
-equal_weight = round(1 / len(tickers), 4)
-# weights in config.yaml are a list positionally aligned to tickers
+equal_weight = round(1 / len(tickers), 4) if tickers else 0.0
+
 preset_weight_lookup = (
     dict(zip(preset["tickers"], preset_weights))
     if preset_weights and len(preset_weights) == len(preset["tickers"])
@@ -112,13 +118,17 @@ benchmark_ticker = st.sidebar.text_input("Benchmark ticker", value=str(default_b
 num_simulations = st.sidebar.slider("Monte Carlo simulations", 100, 5000, 1000, step=100)
 num_days = st.sidebar.slider("Monte Carlo horizon (trading days)", 30, 504, 252, step=21)
 
-# Core calculations
+# Core calculations with safety checks
 
 weights = normalise_weights(weights)
 
 portfolio_returns = calculate_portfolio_returns(prices, weights)
-st.write("DEBUG portfolio_returns shape:", portfolio_returns.shape)
-st.write("DEBUG portfolio_returns head:", portfolio_returns.head())
+
+# Validate portfolio returns before passing to numpy/scipy calculations
+if portfolio_returns.empty or portfolio_returns.dropna().empty:
+    st.error("⚠️ Portfolio returns series is empty. Unable to compute risk metrics due to missing ticker data.")
+    st.stop()
+
 cumulative_returns = calculate_cumulative_returns(portfolio_returns)
 portfolio_value = calculate_portfolio_value(cumulative_returns, initial_value)
 correlation_matrix = calculate_correlation_matrix(prices)
@@ -149,24 +159,39 @@ stress_scenarios = {
 }
 stress_summary = generate_stress_summary(portfolio_value.iloc[-1], stress_scenarios)
 
-benchmark_prices = cached_benchmark_prices(
-    benchmark_ticker,
-    config["date_range"]["start"],
-    config["date_range"]["end"],
-)
-benchmark_returns = benchmark_prices.pct_change().dropna()
-benchmark_returns = benchmark_returns.reindex(portfolio_returns.index).dropna()
-aligned_portfolio_returns = portfolio_returns.reindex(benchmark_returns.index)
+# Benchmark data loading & verification
+try:
+    benchmark_prices = cached_benchmark_prices(
+        benchmark_ticker,
+        config["date_range"]["start"],
+        config["date_range"]["end"],
+    )
+    if benchmark_prices is None or benchmark_prices.empty:
+        st.warning(f"⚠️ Benchmark data for '{benchmark_ticker}' could not be fetched.")
+        benchmark_returns = pd.Series(dtype=float)
+    else:
+        benchmark_returns = benchmark_prices.pct_change().dropna()
+        benchmark_returns = benchmark_returns.reindex(portfolio_returns.index).dropna()
+except Exception as e:
+    st.warning(f"⚠️ Could not load benchmark data: {e}")
+    benchmark_returns = pd.Series(dtype=float)
 
-benchmark_summary = generate_benchmark_summary(
-    aligned_portfolio_returns, benchmark_returns, risk_free_rate
-)
-benchmark_cumulative_returns = calculate_cumulative_returns(benchmark_returns)
-cumulative_comparison = compare_cumulative_performance(
-    cumulative_returns, benchmark_cumulative_returns
-)
+aligned_portfolio_returns = portfolio_returns.reindex(benchmark_returns.index).dropna()
 
-# Layout
+if not benchmark_returns.empty and not aligned_portfolio_returns.empty:
+    benchmark_summary = generate_benchmark_summary(
+        aligned_portfolio_returns, benchmark_returns, risk_free_rate
+    )
+    benchmark_cumulative_returns = calculate_cumulative_returns(benchmark_returns)
+    cumulative_comparison = compare_cumulative_performance(
+        cumulative_returns, benchmark_cumulative_returns
+    )
+else:
+    benchmark_summary = {"beta": 0.0, "alpha": 0.0, "tracking_error": 0.0, "information_ratio": 0.0}
+    benchmark_cumulative_returns = pd.Series(0, index=cumulative_returns.index)
+    cumulative_comparison = {"portfolio": cumulative_returns, "benchmark": benchmark_cumulative_returns}
+
+# Layout & Rendering
 
 st.title("Portfolio Risk & Strategy Analysis Platform")
 st.caption(f"Portfolio: {portfolio_name} | {len(tickers)} assets | "
