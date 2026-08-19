@@ -44,6 +44,29 @@ def get_portfolio_prices(portfolio_name, config, max_retries=3):
         "This is likely a Yahoo Finance rate limit — please try again shortly."
     )
 
+def get_benchmark_prices(ticker, start, end, max_retries=3):
+    '''
+    Fetches daily closing prices for a benchmark ticker.
+    Retries on rate limiting and raises a clear error if data is unavailable.
+    Parameters:
+    ticker (str): Benchmark ticker symbol
+    start (str): Start date
+    end (str): End date
+    max_retries (int): Number of retry attempts on failure
+    Returns:
+    pandas.Series: Daily closing prices, indexed by date
+    '''
+    for attempt in range(max_retries):
+        prices = yf.download(ticker, start=start, end=end)["Close"]
+        if not prices.empty:
+            return prices
+        if attempt < max_retries - 1:
+            time.sleep(2 ** attempt)
+
+    raise ValueError(
+        f"No benchmark data returned for {ticker} between {start} and {end}. "
+        "This is likely a Yahoo Finance rate limit — please try again shortly."
+    )
 
 if __name__ == "__main__":
     config = load_config()
